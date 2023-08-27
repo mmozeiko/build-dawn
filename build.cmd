@@ -100,6 +100,7 @@ cmake                                         ^
   -D TINT_BUILD_TESTS=OFF                     ^
   || exit /b 1
 
+set CL=/Wv:18
 cmake.exe --build dawn.build --config Release --target webgpu --parallel || exit /b 1
 
 rem
