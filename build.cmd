@@ -93,7 +93,7 @@ cmake                                         ^
   -D DAWN_ENABLE_NULL=OFF                     ^
   -D DAWN_ENABLE_DESKTOP_GL=OFF               ^
   -D DAWN_ENABLE_OPENGLES=OFF                 ^
-  -D DAWN_ENABLE_VULKAN=OFF                   ^
+  -D DAWN_ENABLE_VULKAN=ON                    ^
   -D DAWN_BUILD_SAMPLES=OFF                   ^
   -D TINT_BUILD_SAMPLES=OFF                   ^
   -D TINT_BUILD_DOCS=OFF                      ^
