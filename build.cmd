@@ -4,7 +4,7 @@ setlocal enabledelayedexpansion
 cd %~dp0
 
 rem
-rem dependencies
+rem Dependencies
 rem
 
 where /q git.exe || (
