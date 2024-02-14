@@ -1,0 +1,80 @@
+
+name: build-dawn
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  # Use github.run_id on main branch
+  # Use github.event.pull_request.number on pull requests, so it's unique per pull request
+  # Use github.ref on other branches, so it's unique per branch
+  group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/main' && github.run_id || github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: ${{ matrix.config.name }}
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+        - {
+            name: "Windows_Latest_MSVC",
+            os: windows-latest,
+            artifact_type: ".zip",
+            artifact_content_type: application/zip
+          }
+        - {
+            name: "Ubuntu_Latest_GCC",
+            os: ubuntu-latest,
+            artifact_type: "tar.gz",
+            artifact_content_type: application/x-tgz
+          }
+
+    steps:
+      - name: Install dependencies
+        if: startsWith(matrix.config.name, 'Ubuntu')
+        run: |
+          sudo apt update
+          sudo apt install cmake pkg-config libgl-dev libx11-xcb-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxext-dev wayland-protocols libwayland-dev libxkbcommon-dev
+
+      - uses: actions/checkout@v2
+
+      - name: build
+        if: startsWith(matrix.config.name, 'Windows')
+        id: build-win
+        shell: cmd
+        run: build.cmd
+
+      - name: build
+        if: startsWith(matrix.config.name, 'Ubuntu')
+        id: build-linux
+        shell: bash
+        run: ./build.sh
+
+      - name: release
+        id: release
+        if: steps.build.outputs.DAWN_COMMIT != ''
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.build.outputs.BUILD_DATE }}
+          release_name: ${{ steps.build.outputs.BUILD_DATE }}
+          body: |
+            [dawn commit](https://dawn.googlesource.com/dawn/+/${{ steps.build.outputs.DAWN_COMMIT }})
+
+      - name: upload
+        if: github.event_name == 'release' && (github.event.action == 'published' || github.event.action == 'created')
+        id: upload
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.release.outputs.upload_url }}
+          asset_path: "webgpu-${{ steps.build.outputs.BUILD_DATE }}.${{ matrix.config.artifact_type }}"
+          asset_name: "webgpu-${{ steps.build.outputs.BUILD_DATE }}.${{ matrix.config.artifact_type }}"
+          asset_content_type: ${{ matrix.config.artifact_content_type }}

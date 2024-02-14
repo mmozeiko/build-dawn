@@ -7,11 +7,6 @@ rem
 rem Dependencies
 rem
 
-where /q git.exe || (
-  echo ERROR: "git.exe" not found
-  exit /b 1
-)
-
 where /q cmake.exe || (
   echo ERROR: "cmake.exe" not found
   exit /b 1
@@ -55,6 +50,7 @@ set DEPOT_TOOLS_WIN_TOOLCHAIN=0
 if not exist depot_tools (
   call git clone --depth=1 --no-tags --single-branch https://chromium.googlesource.com/chromium/tools/depot_tools.git || exit /b 1
 )
+
 
 rem
 rem clone dawn
