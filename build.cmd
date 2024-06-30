@@ -64,7 +64,6 @@ if not exist dawn (
   call git clone --depth=1 --no-tags --single-branch https://dawn.googlesource.com/dawn || exit /b 1
 ) else (
   cd dawn
-  call git restore src\dawn\native\CMakeLists.txt
   call git pull --force --no-tags || exit /b 1
   cd ..
 )
@@ -73,8 +72,6 @@ cd dawn
 copy /y scripts\standalone.gclient .gclient
 call gclient sync || exit /b 1
 cd ..
-
-type extra.cmake >> dawn\src\dawn\native\CMakeLists.txt
 
 rem
 rem build dawn
@@ -101,26 +98,26 @@ cmake                                         ^
   || exit /b 1
 
 set CL=/Wv:18
-cmake.exe --build dawn.build --config Release --target webgpu --parallel || exit /b 1
+cmake.exe --build dawn.build --config Release --target webgpu_dawn --parallel || exit /b 1
 
 rem
 rem GitHub actions stuff
 rem
 
-copy /y dawn.build\gen\include\dawn\webgpu.h          .
-copy /y dawn.build\Release\webgpu.dll                 .
-copy /y dawn.build\src\dawn\native\Release\webgpu.lib .
+copy /y dawn.build\gen\include\dawn\webgpu.h               .
+copy /y dawn.build\Release\webgpu_dawn.dll                 .
+copy /y dawn.build\src\dawn\native\Release\webgpu_dawn.lib .
 
 if "%GITHUB_WORKFLOW%" neq "" (
 
   set /p DAWN_COMMIT=<dawn\.git\refs\heads\main
-  echo !DAWN_COMMIT! > dawn_commit.txt
+  echo !DAWN_COMMIT! > webgpu_dawn_commit.txt
 
   for /F "skip=1" %%D in ('WMIC OS GET LocalDateTime') do (set LDATE=%%D & goto :dateok)
   :dateok
   set BUILD_DATE=%LDATE:~0,4%-%LDATE:~4,2%-%LDATE:~6,2%
 
-  %SZIP% a -y -mx=9 webgpu-%BUILD_DATE%.zip webgpu.dll webgpu.lib webgpu.h dawn_commit.txt || exit /b 1
+  %SZIP% a -y -mx=9 webgpu-dawn-%BUILD_DATE%.zip webgpu_dawn.dll webgpu_dawn.lib webgpu.h webgpu_dawn_commit.txt || exit /b 1
 
   echo ::set-output name=DAWN_COMMIT::!DAWN_COMMIT!
   echo ::set-output name=BUILD_DATE::%BUILD_DATE%

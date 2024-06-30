@@ -40,6 +40,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.release.outputs.upload_url }}
-          asset_path: "webgpu-${{ steps.build.outputs.BUILD_DATE }}.zip"
-          asset_name: "webgpu-${{ steps.build.outputs.BUILD_DATE }}.zip"
+          asset_path: "webgpu-dawn-${{ steps.build.outputs.BUILD_DATE }}.zip"
+          asset_name: "webgpu-dawn-${{ steps.build.outputs.BUILD_DATE }}.zip"
           asset_content_type: application/zip
