@@ -1,8 +1,5 @@
 dawn
-dawn.build
+dawn-*
+dawn.build-*
 depot_tools
-webgpu.dll
-webgpu.h
-webgpu.lib
-dawn_commit.txt
 *.zip

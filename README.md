@@ -1,4 +1,4 @@
-Automatic weekly build of [dawn][] WebGPU implementation for 64-bit Windows.
+Automatic weekly build of [dawn][] WebGPU implementation for 64-bit Windows (x64 and arm64).
 
 Build produces single `webgpu_dawn.dll` file that exports all public Dawn WebGPU C functions.
 To use in your code - either load the `webgpu_dawn.dll` file dynamically or link to it via `webgpu_dawn.lib` import library.

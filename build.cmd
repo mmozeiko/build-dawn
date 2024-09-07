@@ -4,6 +4,23 @@ setlocal enabledelayedexpansion
 cd %~dp0
 
 rem
+rem build architecture
+rem
+
+if "%1" equ "x64" (
+  set ARCH=x64
+) else if "%1" equ "arm64" (
+  set ARCH=arm64
+) else if "%1" neq "" (
+  echo Unknown target "%1" architecture!
+  exit /b 1
+) else if "%PROCESSOR_ARCHITECTURE%" equ "AMD64" (
+  set ARCH=x64
+) else if "%PROCESSOR_ARCHITECTURE%" equ "ARM64" (
+  set ARCH=arm64
+)
+
+rem
 rem dependencies
 rem
 
@@ -32,20 +49,6 @@ if exist "%ProgramFiles%\7-Zip\7z.exe" (
 )
 
 rem
-rem MSVC environment
-rem
-
-where /Q cl.exe || (
-  set __VSCMD_ARG_NO_LOGO=1
-  for /f "tokens=*" %%i in ('"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -requires Microsoft.VisualStudio.Workload.NativeDesktop -property installationPath') do set VS=%%i
-  if "!VS!" equ "" (
-    echo ERROR: Visual Studio installation not found
-    exit /b 1
-  )  
-  call "!VS!\VC\Auxiliary\Build\vcvarsall.bat" amd64 || exit /b 1
-)
-
-rem
 rem get depot tools
 rem
 
@@ -60,18 +63,28 @@ rem
 rem clone dawn
 rem
 
-if not exist dawn (
-  call git clone --depth=1 --no-tags --single-branch https://dawn.googlesource.com/dawn || exit /b 1
-) else (
-  cd dawn
-  call git pull --force --no-tags || exit /b 1
-  cd ..
+if "%DAWN_COMMIT%" equ "" (
+  for /f "tokens=1 usebackq" %%F IN (`git ls-remote https://dawn.googlesource.com/dawn HEAD`) do set DAWN_COMMIT=%%F
 )
 
-cd dawn
+if not exist dawn (
+  mkdir dawn
+  pushd dawn
+  call git init .                                               || exit /b 1
+  call git remote add origin https://dawn.googlesource.com/dawn || exit /b 1
+  popd
+)
+
+pushd dawn
+
+call git fetch origin %DAWN_COMMIT%  || exit /b 1
+call git checkout --force FETCH_HEAD || exit /b 1
+
 copy /y scripts\standalone.gclient .gclient
-call gclient sync || exit /b 1
-cd ..
+"C:\Program Files\Git\usr\bin\sed.exe" -i.bak -e "/'third_party\/catapult'\: /,+3d" -e "/'third_party\/swiftshader'\: /,+3d" -e "/'third_party\/angle'\: /,+3d" -e "/'third_party\/webgpu-cts'\: /,+3d" -e "/'third_party\/vulkan-validation-layers\/src'\: /,+3d" -e "/'third_party\/khronos\/OpenGL-Registry'\: /,+3d" DEPS || exit /b 1
+call gclient sync -f -D -R || exit /b 1
+
+popd
 
 rem
 rem build dawn
@@ -79,9 +92,11 @@ rem
 
 cmake                                         ^
   -S dawn                                     ^
-  -B dawn.build                               ^
+  -B dawn.build-%ARCH%                        ^
+  -A %ARCH%                                   ^
   -D CMAKE_BUILD_TYPE=Release                 ^
   -D CMAKE_POLICY_DEFAULT_CMP0091=NEW         ^
+  -D CMAKE_POLICY_DEFAULT_CMP0092=NEW         ^
   -D CMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded ^
   -D BUILD_SHARED_LIBS=OFF                    ^
   -D BUILD_SAMPLES=OFF                        ^
@@ -91,41 +106,35 @@ cmake                                         ^
   -D DAWN_ENABLE_DESKTOP_GL=OFF               ^
   -D DAWN_ENABLE_OPENGLES=OFF                 ^
   -D DAWN_ENABLE_VULKAN=OFF                   ^
+  -D DAWN_USE_GLFW=OFF                        ^
   -D DAWN_BUILD_SAMPLES=OFF                   ^
-  -D TINT_BUILD_SAMPLES=OFF                   ^
-  -D TINT_BUILD_DOCS=OFF                      ^
   -D TINT_BUILD_TESTS=OFF                     ^
   || exit /b 1
 
 set CL=/Wv:18
-cmake.exe --build dawn.build --config Release --target webgpu_dawn --parallel || exit /b 1
+cmake.exe --build dawn.build-%ARCH% --config Release --target webgpu_dawn --parallel || exit /b 1
 
 rem
-rem GitHub actions stuff
+rem prepare output folder
 rem
 
-copy /y dawn.build\gen\include\dawn\webgpu.h               .
-copy /y dawn.build\Release\webgpu_dawn.dll                 .
-copy /y dawn.build\src\dawn\native\Release\webgpu_dawn.lib .
+mkdir dawn-%ARCH%
+
+echo %DAWN_COMMIT% > dawn-%ARCH%\commit.txt
+
+copy /y dawn.build-%ARCH%\gen\include\dawn\webgpu.h               dawn-%ARCH%
+copy /y dawn.build-%ARCH%\Release\webgpu_dawn.dll                 dawn-%ARCH%
+copy /y dawn.build-%ARCH%\src\dawn\native\Release\webgpu_dawn.lib dawn-%ARCH%
+
+rem
+rem Done!
+rem
 
 if "%GITHUB_WORKFLOW%" neq "" (
 
-  set /p DAWN_COMMIT=<dawn\.git\refs\heads\main
-  echo !DAWN_COMMIT! > webgpu_dawn_commit.txt
+  rem
+  rem GitHub actions stuff
+  rem
 
-  for /F "skip=1" %%D in ('WMIC OS GET LocalDateTime') do (set LDATE=%%D & goto :dateok)
-  :dateok
-  set BUILD_DATE=%LDATE:~0,4%-%LDATE:~4,2%-%LDATE:~6,2%
-
-  %SZIP% a -y -mx=9 webgpu-dawn-%BUILD_DATE%.zip webgpu_dawn.dll webgpu_dawn.lib webgpu.h webgpu_dawn_commit.txt || exit /b 1
-
-  echo ::set-output name=DAWN_COMMIT::!DAWN_COMMIT!
-  echo ::set-output name=BUILD_DATE::%BUILD_DATE%
-
+  %SZIP% a -y -mx=9 dawn-%ARCH%-%BUILD_DATE%.zip dawn-%ARCH% || exit /b 1
 )
-
-rem
-rem done!
-rem
-
-goto :eof
