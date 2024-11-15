@@ -90,7 +90,9 @@ rem
 rem build dawn
 rem
 
-cmake                                         ^
+rem required Windows SDK version is in dawn\build\vs_toolchain.py file
+
+cmake.exe                                     ^
   -S dawn                                     ^
   -B dawn.build-%ARCH%                        ^
   -A %ARCH%,version=10.0.26100.0              ^
@@ -108,11 +110,16 @@ cmake                                         ^
   -D DAWN_ENABLE_VULKAN=OFF                   ^
   -D DAWN_USE_GLFW=OFF                        ^
   -D DAWN_BUILD_SAMPLES=OFF                   ^
+  -D DAWN_ENABLE_SPIRV_VALIDATION=OFF         ^
+  -D DAWN_DXC_ENABLE_ASSERTS_IN_NDEBUG=OFF    ^
   -D TINT_BUILD_TESTS=OFF                     ^
+  -D TINT_BUILD_SPV_READER=ON                 ^
+  -D TINT_BUILD_SPV_WRITER=ON                 ^
+  -D TINT_BUILD_CMD_TOOLS=ON                  ^
   || exit /b 1
 
 set CL=/Wv:18
-cmake.exe --build dawn.build-%ARCH% --config Release --target webgpu_dawn --parallel || exit /b 1
+cmake.exe --build dawn.build-%ARCH% --config Release --target webgpu_dawn tint_cmd_tint_cmd --parallel || exit /b 1
 
 rem
 rem prepare output folder
@@ -124,6 +131,7 @@ echo %DAWN_COMMIT% > dawn-%ARCH%\commit.txt
 
 copy /y dawn.build-%ARCH%\gen\include\dawn\webgpu.h               dawn-%ARCH%
 copy /y dawn.build-%ARCH%\Release\webgpu_dawn.dll                 dawn-%ARCH%
+copy /y dawn.build-%ARCH%\Release\tint.exe                        dawn-%ARCH%
 copy /y dawn.build-%ARCH%\src\dawn\native\Release\webgpu_dawn.lib dawn-%ARCH%
 
 rem
