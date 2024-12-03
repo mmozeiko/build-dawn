@@ -49,17 +49,6 @@ if exist "%ProgramFiles%\7-Zip\7z.exe" (
 )
 
 rem
-rem get depot tools
-rem
-
-set PATH=%CD%\depot_tools;%PATH%
-set DEPOT_TOOLS_WIN_TOOLCHAIN=0
-
-if not exist depot_tools (
-  call git clone --depth=1 --no-tags --single-branch https://chromium.googlesource.com/chromium/tools/depot_tools.git || exit /b 1
-)
-
-rem
 rem clone dawn
 rem
 
@@ -80,10 +69,6 @@ pushd dawn
 call git fetch origin %DAWN_COMMIT%  || exit /b 1
 call git checkout --force FETCH_HEAD || exit /b 1
 
-copy /y scripts\standalone.gclient .gclient
-"C:\Program Files\Git\usr\bin\sed.exe" -i.bak -e "/'third_party\/catapult'\: /,+3d" -e "/'third_party\/swiftshader'\: /,+3d" -e "/'third_party\/angle'\: /,+3d" -e "/'third_party\/webgpu-cts'\: /,+3d" -e "/'third_party\/vulkan-validation-layers\/src'\: /,+3d" -e "/'third_party\/khronos\/OpenGL-Registry'\: /,+3d" DEPS || exit /b 1
-call gclient sync -f -D -R || exit /b 1
-
 popd
 
 rem
@@ -100,8 +85,8 @@ cmake.exe                                     ^
   -D CMAKE_POLICY_DEFAULT_CMP0091=NEW         ^
   -D CMAKE_POLICY_DEFAULT_CMP0092=NEW         ^
   -D CMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded ^
-  -D BUILD_SHARED_LIBS=OFF                    ^
-  -D BUILD_SAMPLES=OFF                        ^
+  -D DAWN_BUILD_SAMPLES=OFF                   ^
+  -D DAWN_BUILD_TESTS=OFF                     ^
   -D DAWN_ENABLE_D3D12=ON                     ^
   -D DAWN_ENABLE_D3D11=OFF                    ^
   -D DAWN_ENABLE_NULL=OFF                     ^
@@ -109,9 +94,10 @@ cmake.exe                                     ^
   -D DAWN_ENABLE_OPENGLES=OFF                 ^
   -D DAWN_ENABLE_VULKAN=OFF                   ^
   -D DAWN_USE_GLFW=OFF                        ^
-  -D DAWN_BUILD_SAMPLES=OFF                   ^
   -D DAWN_ENABLE_SPIRV_VALIDATION=OFF         ^
   -D DAWN_DXC_ENABLE_ASSERTS_IN_NDEBUG=OFF    ^
+  -D DAWN_FETCH_DEPENDENCIES=ON               ^
+  -D DAWN_BUILD_MONOLITHIC_LIBRARY=ON         ^
   -D TINT_BUILD_TESTS=OFF                     ^
   -D TINT_BUILD_SPV_READER=ON                 ^
   -D TINT_BUILD_SPV_WRITER=ON                 ^
