@@ -85,6 +85,7 @@ cmake.exe                                     ^
   -D CMAKE_POLICY_DEFAULT_CMP0091=NEW         ^
   -D CMAKE_POLICY_DEFAULT_CMP0092=NEW         ^
   -D CMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded ^
+  -D ABSL_MSVC_STATIC_RUNTIME=ON              ^
   -D DAWN_BUILD_SAMPLES=OFF                   ^
   -D DAWN_BUILD_TESTS=OFF                     ^
   -D DAWN_ENABLE_D3D12=ON                     ^
