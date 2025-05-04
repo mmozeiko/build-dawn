@@ -66,10 +66,16 @@ if not exist dawn (
 
 pushd dawn
 
-call git fetch origin %DAWN_COMMIT%  || exit /b 1
-call git checkout --force FETCH_HEAD || exit /b 1
+call git fetch --no-recurse-submodules origin %DAWN_COMMIT%       || exit /b 1
+call git -c advice.detachedHead=false checkout --force FETCH_HEAD || exit /b 1
 
 popd
+
+rem
+rem fetch dependencies
+rem
+
+call python "dawn/tools/fetch_dawn_dependencies.py" --directory dawn
 
 rem
 rem build dawn
@@ -97,7 +103,7 @@ cmake.exe                                     ^
   -D DAWN_USE_GLFW=OFF                        ^
   -D DAWN_ENABLE_SPIRV_VALIDATION=OFF         ^
   -D DAWN_DXC_ENABLE_ASSERTS_IN_NDEBUG=OFF    ^
-  -D DAWN_FETCH_DEPENDENCIES=ON               ^
+  -D DAWN_FETCH_DEPENDENCIES=OFF              ^
   -D DAWN_BUILD_MONOLITHIC_LIBRARY=ON         ^
   -D TINT_BUILD_TESTS=OFF                     ^
   -D TINT_BUILD_SPV_READER=ON                 ^
