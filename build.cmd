@@ -72,6 +72,12 @@ call git -c advice.detachedHead=false checkout --force FETCH_HEAD || exit /b 1
 popd
 
 rem
+rem patch
+rem
+
+call git apply -p1 --directory=dawn dawn.patch || exit /b 1
+
+rem
 rem fetch dependencies
 rem
 
@@ -122,10 +128,10 @@ mkdir dawn-%ARCH%
 
 echo %DAWN_COMMIT% > dawn-%ARCH%\commit.txt
 
-copy /y dawn.build-%ARCH%\gen\include\dawn\webgpu.h               dawn-%ARCH%
-copy /y dawn.build-%ARCH%\Release\webgpu_dawn.dll                 dawn-%ARCH%
-copy /y dawn.build-%ARCH%\Release\tint.exe                        dawn-%ARCH%
-copy /y dawn.build-%ARCH%\src\dawn\native\Release\webgpu_dawn.lib dawn-%ARCH%
+copy /y dawn.build-%ARCH%\gen\include\dawn\webgpu.h               dawn-%ARCH% || exit /b 1
+copy /y dawn.build-%ARCH%\Release\webgpu_dawn.dll                 dawn-%ARCH% || exit /b 1
+copy /y dawn.build-%ARCH%\Release\tint.exe                        dawn-%ARCH% || exit /b 1
+copy /y dawn.build-%ARCH%\src\dawn\native\Release\webgpu_dawn.lib dawn-%ARCH% || exit /b 1
 
 rem
 rem Done!

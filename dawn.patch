@@ -1,0 +1,37 @@
+diff --git a/src/cmake/BundleLibraries.cmake b/src/cmake/BundleLibraries.cmake
+index 0e93c9b9dc..e20d1579db 100644
+--- a/src/cmake/BundleLibraries.cmake
++++ b/src/cmake/BundleLibraries.cmake
+@@ -113,7 +113,7 @@ function(bundle_libraries output_target)
+ 
+   # Create the output library using the validated type and collected objects
+   # If all_objects is empty, add_library will still create an empty library of the specified type.
+-  add_library(${output_target} ${all_objects})
++  add_library(${output_target} SHARED ${all_objects})
+ 
+   # Add dependencies to ensure input targets are built before the bundled library.
+   # This handles the build order correctly.
+diff --git a/src/dawn/native/CMakeLists.txt b/src/dawn/native/CMakeLists.txt
+index 0719eb470e..87c07e640d 100644
+--- a/src/dawn/native/CMakeLists.txt
++++ b/src/dawn/native/CMakeLists.txt
+@@ -299,7 +299,6 @@ list(APPEND conditional_private_platform_depends
+ if (WIN32 AND NOT WINDOWS_STORE)
+   list(APPEND conditional_private_platform_depends
+        user32.lib
+-       onecore_apiset.lib
+   )
+ endif()
+ 
+@@ -955,6 +955,11 @@ if (DAWN_BUILD_MONOLITHIC_LIBRARY)
+             "WGPU_IMPLEMENTATION"
+             "DAWN_NATIVE_IMPLEMENTATION"
+     )
++    target_compile_definitions(webgpu_dawn
++        PUBLIC
++            "WGPU_SHARED_LIBRARY"
++            "DAWN_NATIVE_SHARED_LIBRARY"
++    )
+     if (BUILD_SHARED_LIBS)
+         target_compile_definitions(webgpu_dawn
+             PUBLIC
