@@ -110,7 +110,7 @@ cmake.exe                                     ^
   -D DAWN_ENABLE_SPIRV_VALIDATION=OFF         ^
   -D DAWN_DXC_ENABLE_ASSERTS_IN_NDEBUG=OFF    ^
   -D DAWN_FETCH_DEPENDENCIES=OFF              ^
-  -D DAWN_BUILD_MONOLITHIC_LIBRARY=ON         ^
+  -D DAWN_BUILD_MONOLITHIC_LIBRARY=SHARED     ^
   -D TINT_BUILD_TESTS=OFF                     ^
   -D TINT_BUILD_SPV_READER=ON                 ^
   -D TINT_BUILD_SPV_WRITER=ON                 ^
