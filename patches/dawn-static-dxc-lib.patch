@@ -1,0 +1,145 @@
+diff --git a/src/dawn/native/CMakeLists.txt b/src/dawn/native/CMakeLists.txt
+index efa040a3ad..626b194eee 100644
+--- a/src/dawn/native/CMakeLists.txt
++++ b/src/dawn/native/CMakeLists.txt
+@@ -1024,6 +1024,7 @@ if (DAWN_BUILD_MONOLITHIC_LIBRARY)
+         dawn_public_config
+       PRIVATE
+         ${conditional_private_platform_depends}
++        dxcompiler
+     )
+ 
+     set(webgpu_dawn_public_headers)
+diff --git a/src/dawn/native/d3d12/PlatformFunctionsD3D12.cpp b/src/dawn/native/d3d12/PlatformFunctionsD3D12.cpp
+index 673f23fcb1..587f39ceb0 100644
+--- a/src/dawn/native/d3d12/PlatformFunctionsD3D12.cpp
++++ b/src/dawn/native/d3d12/PlatformFunctionsD3D12.cpp
+@@ -25,6 +25,7 @@
+ // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ 
++#define DxcCreateInstance DxcCreateInstance_FromWindowsHeadersWhatever
+ #include "dawn/native/d3d12/PlatformFunctionsD3D12.h"
+ 
+ #include <array>
+@@ -33,11 +34,20 @@
+ #include <utility>
+ 
+ #include "dawn/common/SystemUtils.h"
++#undef DxcCreateInstance
++
++extern "C" HRESULT WINAPI DXC_Init(void);
++extern "C" HRESULT WINAPI DXC_Done(void);
++extern "C" HRESULT WINAPI DxcCreateInstance(REFCLSID rclsid, REFIID riid, LPVOID* ppv);
+ 
+ namespace dawn::native::d3d12 {
+ 
+ PlatformFunctions::PlatformFunctions() = default;
+-PlatformFunctions::~PlatformFunctions() = default;
++PlatformFunctions::~PlatformFunctions() {
++    if (mDxcLib) {
++        DXC_Done();
++    }
++}
+ 
+ MaybeError PlatformFunctions::Initialize(std::span<const std::string> searchPaths) {
+     DAWN_TRY(Base::Initialize());
+@@ -116,30 +126,18 @@ MaybeError PlatformFunctions::EnsureDXCLibraries(std::span<const std::string> se
+     // LoadDXIL and LoadDXCompiler will fail in UWP, but Initialize() can still be
+     // successfully executed.
+ 
+-    if (mDXILLib.Valid()) {
++    if (mDxcLib) {
+         // The libraries are already loaded, no need to load them again.
+-        DAWN_CHECK(mDXCompilerLib.Valid());
+         return {};
+     }
+ 
+-    DynamicLib dxilLib;
+-    std::string error;
+-    // DXIL must be loaded before DXC, otherwise shader signing is unavailable
+-    if (!dxilLib.Open("dxil.dll", searchPaths, &error)) {
+-        return DAWN_INTERNAL_ERROR(std::move(error));
++    if (FAILED(DXC_Init())) {
++        return DAWN_INTERNAL_ERROR("DXC_Init failed");
+     }
+ 
+-    DynamicLib dxCompilerLib;
+-    if (!dxCompilerLib.Open("dxcompiler.dll", searchPaths, &error)) {
+-        return DAWN_INTERNAL_ERROR(std::move(error));
+-    }
++    mDxcLib = true;
++    dxcCreateInstance = &DxcCreateInstance;
+ 
+-    if (!dxCompilerLib.GetProc(&dxcCreateInstance, "DxcCreateInstance", &error)) {
+-        return DAWN_INTERNAL_ERROR(std::move(error));
+-    }
+-
+-    mDXCompilerLib = std::move(dxCompilerLib);
+-    mDXILLib = std::move(dxilLib);
+     return {};
+ }
+ #endif  // DAWN_USE_BUILT_DXC
+diff --git a/src/dawn/native/d3d12/PlatformFunctionsD3D12.h b/src/dawn/native/d3d12/PlatformFunctionsD3D12.h
+index cdb82188a6c..bc426d0efdb 100644
+--- a/src/dawn/native/d3d12/PlatformFunctionsD3D12.h
++++ b/src/dawn/native/d3d12/PlatformFunctionsD3D12.h
+@@ -93,8 +93,7 @@ class PlatformFunctions final : public d3d::PlatformFunctions {
+     DynamicLib mD3D12Lib;
+     DynamicLib mD3D11Lib;
+     DynamicLib mPIXEventRuntimeLib;
+-    DynamicLib mDXILLib;
+-    DynamicLib mDXCompilerLib;
++    bool mDxcLib = false;
+ };
+ 
+ }  // namespace dawn::native::d3d12
+diff --git a/third_party/dxc b/third_party/dxc
+index b3e84a8fa06..ee1ca1e8f2a 160000
+--- a/third_party/dxc
++++ b/third_party/dxc
+@@ -1 +1 @@
+-Subproject commit b3e84a8fa06c4f3a94b3de08855e051944752a7e
++Subproject commit ee1ca1e8f2a140a4267567ed26e18af1b3cabb89-dirty
+diff --git a/third_party/glslang/src b/third_party/glslang/src
+index f6652dcf751..a57276bf558 160000
+--- a/third_party/glslang/src
++++ b/third_party/glslang/src
+@@ -1 +1 @@
+-Subproject commit f6652dcf751920b1fbc132619b0e84ef3d6e77c4
++Subproject commit a57276bf558f5cf94d3a9854ebdf5a2236849a5a
+diff --git a/third_party/spirv-headers/src b/third_party/spirv-headers/src
+index a5164829e8f..01e0577914a 160000
+--- a/third_party/spirv-headers/src
++++ b/third_party/spirv-headers/src
+@@ -1 +1 @@
+-Subproject commit a5164829e8f0255392c481696b63763a5e80be3c
++Subproject commit 01e0577914a75a2569c846778c2f93aa8e6feddd
+diff --git a/third_party/spirv-tools/src b/third_party/spirv-tools/src
+index b9997dafc79..f932fc23e2f 160000
+--- a/third_party/spirv-tools/src
++++ b/third_party/spirv-tools/src
+@@ -1 +1 @@
+-Subproject commit b9997dafc791634ce51f6bed7ab886ea0e600a15
++Subproject commit f932fc23e2f84c8affbca4b2761d1da7dd4e0ccd
+diff --git a/third_party/vulkan-headers/src b/third_party/vulkan-headers/src
+index f5fad0a209a..a4f8ada9f4f 160000
+--- a/third_party/vulkan-headers/src
++++ b/third_party/vulkan-headers/src
+@@ -1 +1 @@
+-Subproject commit f5fad0a209a2e09eb5e622d930d5eade1a235b13
++Subproject commit a4f8ada9f4f97c45b8c89c57997be9cebaae65d2
+diff --git a/third_party/vulkan-loader/src b/third_party/vulkan-loader/src
+index 385716f0a63..0b058dd7537 160000
+--- a/third_party/vulkan-loader/src
++++ b/third_party/vulkan-loader/src
+@@ -1 +1 @@
+-Subproject commit 385716f0a63fe2c26e54a5140c9877a80da66592
++Subproject commit 0b058dd7537945bdf09d28fd9188ed7639b90f2e
+diff --git a/third_party/vulkan-utility-libraries/src b/third_party/vulkan-utility-libraries/src
+index a1e45945b3a..4d0b838ffcf 160000
+--- a/third_party/vulkan-utility-libraries/src
++++ b/third_party/vulkan-utility-libraries/src
+@@ -1 +1 @@
+-Subproject commit a1e45945b3a84140956dc4672684090cf8e636a4
++Subproject commit 4d0b838ffcf1ef81151f0e7e11fad1d9ff859813

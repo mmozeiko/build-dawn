@@ -1,8 +1,8 @@
 diff --git a/src/dawn/native/CMakeLists.txt b/src/dawn/native/CMakeLists.txt
-index c160cfc481..79d6ffbcf5 100644
+index efa040a3ad..01a7641a54 100644
 --- a/src/dawn/native/CMakeLists.txt
 +++ b/src/dawn/native/CMakeLists.txt
-@@ -299,7 +299,6 @@ list(APPEND conditional_private_platform_depends
+@@ -306,7 +306,6 @@ list(APPEND conditional_private_platform_depends
  if (WIN32 AND NOT WINDOWS_STORE)
    list(APPEND conditional_private_platform_depends
         user32.lib

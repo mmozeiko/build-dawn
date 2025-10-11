@@ -1,5 +1,4 @@
-dawn
-dawn-*
-dawn.build-*
-depot_tools
-*.zip
+/dawn
+/dawn-*
+/dawn.build-*
+/*.zip
