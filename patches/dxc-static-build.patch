@@ -192,38 +192,27 @@ diff --git a/lib/DxcSupport/dxcapi.extval.cpp b/lib/DxcSupport/dxcapi.extval.cpp
 index 699873cc..32d06e58 100644
 --- a/lib/DxcSupport/dxcapi.extval.cpp
 +++ b/lib/DxcSupport/dxcapi.extval.cpp
-@@ -26,29 +26,8 @@ HRESULT DxcDllExtValidationLoader::CreateInstance2Impl(IMalloc *pMalloc,
+@@ -402,6 +402,7 @@ HRESULT DxcDllExtValidationLoader::CreateInstance2Impl(
+   return DxCompilerSupport.CreateInstance2(Malloc, Clsid, Riid, ResultObject);
  }
  
- HRESULT DxcDllExtValidationLoader::Initialize() {
--  // Load dxcompiler.dll
--  HRESULT Result =
--      DxCompilerSupport.InitializeForDll(kDxCompilerLib, "DxcCreateInstance");
--  // if dxcompiler.dll fails to load, return the failed HRESULT
--  if (DXC_FAILED(Result)) {
--    return Result;
--  }
--
--  // now handle external dxil.dll
--  const char *EnvVarVal = std::getenv("DXC_DXIL_DLL_PATH");
--  if (!EnvVarVal || std::string(EnvVarVal).empty()) {
--    return S_OK;
--  }
--
--  DxilDllPath = std::string(EnvVarVal);
--  std::filesystem::path DllPath(DxilDllPath);
--
--  // Check if path is absolute and exists
--  if (!DllPath.is_absolute() || !std::filesystem::exists(DllPath)) {
--    return E_INVALIDARG;
--  }
--
--  return DxilExtValSupport.InitializeForDll(DxilDllPath.c_str(),
--                                            "DxcCreateInstance");
++#if 0
+ HRESULT
+ DxcDllExtValidationLoader::InitializeForDll(LPCSTR dllName, LPCSTR fnName) {
+   // Load dxcompiler.dll
+@@ -437,9 +438,12 @@ DxcDllExtValidationLoader::InitializeForDll(LPCSTR dllName, LPCSTR fnName) {
+ 
+   return Result;
+ }
++#endif
+ 
+ HRESULT DxcDllExtValidationLoader::initialize() {
+-  return InitializeForDll(kDxCompilerLib, "DxcCreateInstance");
 +  DxilExtValSupport.m_createFn = &DXIL_CreateInstance;
 +  DxilExtValSupport.m_createFn2 = &DXIL_CreateInstance2;
 +  return S_OK;
  }
+ 
  } // namespace dxc
 diff --git a/lib/DxcSupport/dxcapi.use.cpp b/lib/DxcSupport/dxcapi.use.cpp
 index fed47e2e..74727947 100644
