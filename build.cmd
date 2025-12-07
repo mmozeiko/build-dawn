@@ -66,7 +66,7 @@ rem
 rem patches
 rem
 
-call git apply -p1 --directory=dawn                 patches/dawn-no-onecore-apiset-lib.patch || exit /b 1
+rem call git apply -p1 --directory=dawn                 patches/dawn-no-onecore-apiset-lib.patch || exit /b 1
 call git apply -p1 --directory=dawn                 patches/dawn-static-dxc-lib.patch        || exit /b 1
 call git apply -p1 --directory=dawn/third_party/dxc patches/dxc-static-build.patch           || exit /b 1
 
