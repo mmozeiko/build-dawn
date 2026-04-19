@@ -34,7 +34,7 @@ jobs:
     steps:
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Run Build Script
         id: build
@@ -42,7 +42,7 @@ jobs:
         run: call build.cmd ${{ matrix.arch }}
 
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: dawn-${{ matrix.arch }}-${{ needs.info.outputs.BUILD_DATE }}
           path: dawn-${{ matrix.arch }}-${{ needs.info.outputs.BUILD_DATE }}.zip
@@ -64,7 +64,7 @@ jobs:
           gh release create ${{ needs.info.outputs.BUILD_DATE }} -R "${GITHUB_REPOSITORY}" -t '${{ needs.info.outputs.BUILD_DATE }}' -F notes.txt
 
       - name: Get Artifacts From Build Steps
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: dawn-*-${{ needs.info.outputs.BUILD_DATE }}
           merge-multiple: true
