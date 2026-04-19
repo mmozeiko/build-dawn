@@ -54,7 +54,7 @@ if not exist dawn (
 call git -C dawn fetch --no-recurse-submodules origin %DAWN_COMMIT% || exit /b 1
 call git -C dawn reset --hard FETCH_HEAD                            || exit /b 1
 
-if exist dawn\third_party\dxc call git -C dawn\third_party\dxc reset --hard HEAD || exit /b 1
+if exist dawn\third_party\directx-shader-compiler\src call git -C dawn\third_party\directx-shader-compiler\src reset --hard HEAD || exit /b 1
 
 rem
 rem fetch dependencies
@@ -66,8 +66,9 @@ rem
 rem patches
 rem
 
-call git apply -p1 --directory=dawn                 patches/dawn-static-dxc-lib.patch        || exit /b 1
-call git apply -p1 --directory=dawn/third_party/dxc patches/dxc-static-build.patch           || exit /b 1
+call git apply -p1 --directory=dawn                                         patches/dawn-static-dxc-lib.patch || exit /b 1
+call git apply -p1 --directory=dawn                                         patches/tint-dxc-path-fix.patch   || exit /b 1
+call git apply -p1 --directory=dawn/third_party/directx-shader-compiler/src patches/dxc-static-build.patch    || exit /b 1
 
 rem
 rem configure dawn build
@@ -109,16 +110,16 @@ if "%HOST_ARCH%" neq "%TARGET_ARCH%" (
   rem build native architecture tblgen executables for dxc
   rem
 
-  cmake.exe                                ^
-    -S dawn\third_party\dxc                ^
-    -B dawn.build-%TARGET_ARCH%\dxc-native ^
-    -A %HOST_ARCH%                         ^
-    -D CMAKE_BUILD_TYPE=Release            ^
-    -D BUILD_SHARED_LIBS=OFF               ^
-    -D LLVM_TARGETS_TO_BUILD=None          ^
-    -D LLVM_ENABLE_WARNINGS=OFF            ^
-    -D LLVM_ENABLE_EH=ON                   ^
-    -D LLVM_ENABLE_RTTI=ON                 ^
+  cmake.exe                                         ^
+    -S dawn\third_party\directx-shader-compiler\src ^
+    -B dawn.build-%TARGET_ARCH%\dxc-native          ^
+    -A %HOST_ARCH%                                  ^
+    -D CMAKE_BUILD_TYPE=Release                     ^
+    -D BUILD_SHARED_LIBS=OFF                        ^
+    -D LLVM_TARGETS_TO_BUILD=None                   ^
+    -D LLVM_ENABLE_WARNINGS=OFF                     ^
+    -D LLVM_ENABLE_EH=ON                            ^
+    -D LLVM_ENABLE_RTTI=ON                          ^
     || exit /b 1
 
 
@@ -130,8 +131,8 @@ if "%HOST_ARCH%" neq "%TARGET_ARCH%" (
 
   rem move host arch exe's (newer timestamp) over target arch exe's (older timestamp)
   rem so next dawn build steps will be able to use these exe's for different target arch
-  move /y dawn.build-%TARGET_ARCH%\dxc-native\Release\bin\llvm-tblgen.exe  dawn.build-%TARGET_ARCH%\third_party\dxc\Release\bin\llvm-tblgen.exe
-  move /y dawn.build-%TARGET_ARCH%\dxc-native\Release\bin\clang-tblgen.exe dawn.build-%TARGET_ARCH%\third_party\dxc\Release\bin\clang-tblgen.exe
+  move /y dawn.build-%TARGET_ARCH%\dxc-native\Release\bin\llvm-tblgen.exe  dawn.build-%TARGET_ARCH%\third_party\directx-shader-compiler\src\Release\bin\llvm-tblgen.exe
+  move /y dawn.build-%TARGET_ARCH%\dxc-native\Release\bin\clang-tblgen.exe dawn.build-%TARGET_ARCH%\third_party\directx-shader-compiler\src\Release\bin\clang-tblgen.exe
 )
 
 rem
