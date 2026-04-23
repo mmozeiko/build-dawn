@@ -67,7 +67,6 @@ rem patches
 rem
 
 call git apply -p1 --directory=dawn                                         patches/dawn-static-dxc-lib.patch || exit /b 1
-call git apply -p1 --directory=dawn                                         patches/tint-dxc-path-fix.patch   || exit /b 1
 call git apply -p1 --directory=dawn/third_party/directx-shader-compiler/src patches/dxc-static-build.patch    || exit /b 1
 
 rem
