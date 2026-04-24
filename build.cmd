@@ -138,7 +138,8 @@ rem
 rem run the full dawn build
 rem
 
-set CL=/Wv:18
+set CL=/Zi /Wv:18
+set LINK=/OPT:REF /OPT:ICF /DEBUG /PDBALTPATH:%%_PDB%% /PDBSTRIPPED
 cmake.exe --build dawn.build-%TARGET_ARCH% --config Release --target webgpu_dawn tint_cmd_tint_cmd --parallel || exit /b 1
 
 rem
@@ -149,10 +150,11 @@ mkdir dawn-%TARGET_ARCH%
 
 echo %DAWN_COMMIT% > dawn-%TARGET_ARCH%\commit.txt
 
-copy /y dawn.build-%TARGET_ARCH%\gen\include\dawn\webgpu.h               dawn-%TARGET_ARCH% || exit /b 1
-copy /y dawn.build-%TARGET_ARCH%\Release\webgpu_dawn.dll                 dawn-%TARGET_ARCH% || exit /b 1
-copy /y dawn.build-%TARGET_ARCH%\Release\tint.exe                        dawn-%TARGET_ARCH% || exit /b 1
-copy /y dawn.build-%TARGET_ARCH%\src\dawn\native\Release\webgpu_dawn.lib dawn-%TARGET_ARCH% || exit /b 1
+copy /y dawn.build-%TARGET_ARCH%\gen\include\dawn\webgpu.h               dawn-%TARGET_ARCH%                 || exit /b 1
+copy /y dawn.build-%TARGET_ARCH%\Release\webgpu_dawn.dll                 dawn-%TARGET_ARCH%                 || exit /b 1
+copy /y dawn.build-%TARGET_ARCH%\Release\webgpu_dawn.stripped.pdb        dawn-%TARGET_ARCH%\webgpu_dawn.pdb || exit /b 1
+copy /y dawn.build-%TARGET_ARCH%\Release\tint.exe                        dawn-%TARGET_ARCH%                 || exit /b 1
+copy /y dawn.build-%TARGET_ARCH%\src\dawn\native\Release\webgpu_dawn.lib dawn-%TARGET_ARCH%                 || exit /b 1
 
 rem
 rem Done!
