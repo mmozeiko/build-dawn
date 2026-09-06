@@ -11,9 +11,9 @@ index efa040a3ad..626b194eee 100644
  
      set(webgpu_dawn_public_headers)
 diff --git a/src/dawn/native/d3d12/PlatformFunctionsD3D12.cpp b/src/dawn/native/d3d12/PlatformFunctionsD3D12.cpp
-index 21489b4c5f..dbadffd862 100644
+index 81d85f9767..eca75e59f3 100644
 --- a/src/dawn/native/d3d12/PlatformFunctionsD3D12.cpp
-+++ b/src/dawn/native/d3d12/PlatformFunctionsD3D12.cpp
++++ a/src/dawn/native/d3d12/PlatformFunctionsD3D12.cpp
 @@ -25,6 +25,7 @@
  // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
@@ -44,49 +44,42 @@ index 21489b4c5f..dbadffd862 100644
  
  MaybeError PlatformFunctions::Initialize(std::span<const std::string> searchPaths) {
      DAWN_TRY(Base::Initialize());
-@@ -185,30 +195,18 @@ MaybeError PlatformFunctions::EnsureDXCLibraries(std::span<const std::string> se
-     // LoadDXIL and LoadDXCompiler will fail in UWP, but Initialize() can still be
-     // successfully executed.
+@@ -202,6 +212,17 @@ void PlatformFunctions::LoadPIXRuntime(std::span<const std::string> searchPaths)
  
--    if (mDXILLib.Valid()) {
+ #if defined(DAWN_USE_BUILT_DXC)
+ MaybeError PlatformFunctions::EnsureDXCLibraries(std::span<const std::string> searchPaths) {
++#if 1
 +    if (mDxcLib) {
-         // The libraries are already loaded, no need to load them again.
--        DAWN_CHECK(mDXCompilerLib.Valid());
-         return {};
-     }
- 
--    DynamicLib dxilLib;
--    std::string error;
--    // DXIL must be loaded before DXC, otherwise shader signing is unavailable
--    if (!dxilLib.Open("dxil.dll", searchPaths, &error)) {
--        return DAWN_INTERNAL_ERROR(std::move(error));
++         return {};
++     }
 +    if (FAILED(DXC_Init())) {
 +        return DAWN_INTERNAL_ERROR("DXC_Init failed");
-     }
- 
--    DynamicLib dxCompilerLib;
--    if (!dxCompilerLib.Open("dxcompiler.dll", searchPaths, &error)) {
--        return DAWN_INTERNAL_ERROR(std::move(error));
--    }
++    }
 +    mDxcLib = true;
 +    dxcCreateInstance = &DxcCreateInstance;
++    return {};
++#else
+     // TODO(dawn:766)
+     // Statically linked with dxcompiler.lib in UWP
+     // currently linked with dxcompiler.lib making CoreApp unable to activate
+@@ -225,6 +246,7 @@ MaybeError PlatformFunctions::EnsureDXCLibraries(std::span<const std::string> se
  
--    if (!dxCompilerLib.GetProc(&dxcCreateInstance, "DxcCreateInstance", &error)) {
--        return DAWN_INTERNAL_ERROR(std::move(error));
--    }
--
--    mDXCompilerLib = std::move(dxCompilerLib);
--    mDXILLib = std::move(dxilLib);
+     mDXCompilerLib = std::move(dxCompilerLib);
      return {};
++#endif
  }
  #endif  // DAWN_USE_BUILT_DXC
+ }  // namespace dawn::native::d3d12
 diff --git a/src/dawn/native/d3d12/PlatformFunctionsD3D12.h b/src/dawn/native/d3d12/PlatformFunctionsD3D12.h
 index cdb82188a6c..bc426d0efdb 100644
 --- a/src/dawn/native/d3d12/PlatformFunctionsD3D12.h
 +++ b/src/dawn/native/d3d12/PlatformFunctionsD3D12.h
-@@ -114,4 +114,3 @@ class PlatformFunctions final : public d3d::PlatformFunctions {
+@@ -112,7 +112,7 @@ class PlatformFunctions final : public d3d::PlatformFunctions {
+     DynamicLib mD3D12Lib;
+     DynamicLib mD3D11Lib;
      DynamicLib mPIXEventRuntimeLib;
--    DynamicLib mDXILLib;
 -    DynamicLib mDXCompilerLib;
 +    bool mDxcLib = false;
  
+ #ifdef DAWN_USE_AGILITY_SDK
+     // Called once by Initialize().
