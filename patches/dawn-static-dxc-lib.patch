@@ -53,7 +53,7 @@ index 81d85f9767..eca75e59f3 100644
 +         return {};
 +     }
 +    if (FAILED(DXC_Init())) {
-+        return DAWN_INTERNAL_ERROR("DXC_Init failed");
++        return DAWN_UNRECOVERABLE_ERROR("DXC_Init failed");
 +    }
 +    mDxcLib = true;
 +    dxcCreateInstance = &DxcCreateInstance;
